@@ -7,6 +7,15 @@ export default class App extends React.Component {
         super(props);
 
         this.state = {};
+
+        this.alphaVantage = {
+            root: 'https://www.alphavantage.co/query',
+            apiKey: 'R1IC7R7SN3141VGH',
+            market: 'USD',
+            function: 'function=DIGITAL_CURRENCY_DAILY',
+        };
+
+        // https://www.alphavantage.co/query?apikey=R1IC7R7SN3141VGH&market=USD&symbol=BTC&function=DIGITAL_CURRENCY_DAILY
     }
 
     render () {
