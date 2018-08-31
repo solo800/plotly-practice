@@ -10,6 +10,7 @@ export default class App extends React.Component {
 
         this.state = {
             data: [],
+            year: 2018,
         };
 
         this.alphaVantage = {
@@ -34,25 +35,28 @@ export default class App extends React.Component {
     }
 
     processData (response) {
-        console.log('data', response.data['Time Series (Digital Currency Daily)']['2018-08-28']);
+        console.log('year', this.state.year, 'data', response.data['Time Series (Digital Currency Daily)']);
         // filter out everything except 2018
         const timeSeries = response.data['Time Series (Digital Currency Daily)'];
-        const data2018 = [];
+        const data = [];
 
         for (let dateString in timeSeries) {
             if (timeSeries.hasOwnProperty(dateString)) {
-                if (2018 === new Date(dateString).getFullYear()) {
+                if (this.state.year === new Date(dateString).getFullYear()) {
                     timeSeries[dateString].date = dateString;
-                    data2018.push(timeSeries[dateString]);
+                    data.push(timeSeries[dateString]);
                 }
             }
         }
 
-        return data2018;
+        this.setState(prevState => ({year: prevState.year - 1}));
+
+        return data;
     }
 
     plotData () {
         const timeSeries = this.state.data;
+
         const x = timeSeries.map(day => day.date);
         const y = timeSeries.map(day => day['5. volume']);
 
@@ -72,39 +76,46 @@ export default class App extends React.Component {
 
         const domElem = lineGraph.node();
 
-        plotly.plot(domElem, [line]);
+        plotly.react(domElem, [line]);
 
         window.addEventListener('resize', () => plotly.Plots.resize(domElem));
-
-        let i = window.setInterval(() => {
-            if (0 >= this.state.data.length) {
-                window.clearInterval(i);
-            }
-
-            this.setState((prevState, props) => {
-                console.log('updating', prevState.data.length, prevState.data);
-                return {
-                    data: prevState.data.slice(0, prevState.data.length - 10),
-                };
-            }, () => {
-                console.log('updated');
-                this.plotData();
-            });
-        }, 1500);
     }
 
     componentDidMount () {
         this.get()
             .then(response => {
-                const data2018 = this.processData(response);
-                this.setState({data: data2018}, () => {
-                    // console.log('after', this.state);
+
+                const data = this.processData(response);
+                // const data = [{
+                //     date: ''
+                // }];
+
+                this.setState({data}, () => {
+                    console.log('first plot', this.state.data);
                     this.plotData()
                 });
             })
             .catch(err => {
                 console.log(`Error in initial data retrieval call: ${err}`);
-            })
+            });
+        window.setTimeout(() => {
+            console.log('timing out');
+            this.get()
+                .then(response => {
+
+                    const data = this.processData(response);
+
+                    // const data = [7,8,9,10];
+
+                    this.setState({data}, () => {
+                        console.log('plotting', this.state.data);
+                        this.plotData()
+                    });
+                })
+                .catch(err => {
+                    console.log(`Error in initial data retrieval call: ${err}`);
+                });
+        }, 3000);
     }
 
 
